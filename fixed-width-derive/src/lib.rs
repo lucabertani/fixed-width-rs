@@ -2,7 +2,7 @@ use darling::{ast, util, FromDeriveInput, FromField, FromVariant};
 use proc_macro::TokenStream;
 use quote::quote;
 use strum::EnumString;
-use syn::{parse_macro_input, DeriveInput, Ident, Type};
+use syn::{parse_macro_input, DeriveInput, Ident};
 
 // cargo expand --test test_simple
 // RUSTFLAGS="-Z macro-backtrace" cargo test
@@ -11,7 +11,7 @@ use syn::{parse_macro_input, DeriveInput, Ident, Type};
 #[derive(Debug, FromDeriveInput)]
 #[darling(attributes(fixed_width), supports(struct_named))]
 struct FixedWidthFields {
-    ident: Ident,
+    //ident: Ident,
     data: ast::Data<util::Ignored, FixedWidthField>,
 }
 
@@ -22,7 +22,7 @@ struct FixedWidthFields {
 #[darling(attributes(fixed_width))]
 struct FixedWidthField {
     ident: Option<Ident>,
-    ty: Type,
+    //ty: Type,
     size: usize,
     #[darling(default = "pad_default")]
     pad: char,

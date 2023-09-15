@@ -30,7 +30,7 @@ impl FixedWidthError {
     {
         FixedWidthError {
             msg: context.to_string(),
-            backtrace: backtrace,
+            backtrace,
             source: error,
         }
     }
@@ -65,8 +65,8 @@ impl FixedWidthError {
         self.backtrace.as_ref()
     }
 
-    pub fn source(&self) -> Option<&Box<dyn std::error::Error + Send + Sync>> {
-        self.source.as_ref()
+    pub fn source(&self) -> Option<&(dyn std::error::Error + Send + Sync)> {
+        self.source.as_deref()
     }
 }
 

@@ -10,6 +10,7 @@ pub struct FieldConfig {
 }
 
 impl FieldConfig {
+    #![allow(clippy::too_many_arguments)]
     pub fn new(
         field_name: &str,
         size: usize,

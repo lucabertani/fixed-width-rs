@@ -15,7 +15,7 @@ pub trait FixedWidth: Send + Sync {
     fn to_fixed_width_bytes(&self) -> Result<Vec<u8>, FixedWidthError>;
     fn to_fixed_width_string(&self) -> Result<String, FixedWidthError> {
         self.to_fixed_width_bytes()
-            .and_then(|bytes| Ok(String::from_utf8(bytes).unwrap()))
+            .map(|bytes| String::from_utf8(bytes).unwrap())
     }
 }
 
@@ -23,6 +23,7 @@ pub trait FixedWidthEnum: Send + Sync {
     fn key(&self) -> String;
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn pad(
     any_value: &dyn AnyValueTrait,
     field_name: &str,
@@ -34,7 +35,7 @@ pub fn pad(
     time_format: &str,
     date_time_format: &str,
 ) -> Result<Vec<u8>, FixedWidthError> {
-    let any_value = any_value.into_any_value()?;
+    let any_value = any_value.to_any_value()?;
     let field_config = FieldConfig::new(
         field_name,
         size,
