@@ -1,0 +1,24 @@
+[package]
+name = "fixed_width_derive"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+darling = "0.20.3"
+proc-macro2 = "1.0.66"
+quote = "1.0.33"
+strum = { version = "0.25.0", features = ["derive"] }
+syn = { version = "2.0.31", features = ["full"] }
+
+# data type
+chrono = "0.4"
+time = "0.3"
+bigdecimal = "0.4"
+
+#quote = "1.0.33"
+#syn = { version = "2.0.31", features = ["full"] }

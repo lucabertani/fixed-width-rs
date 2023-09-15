@@ -1,0 +1,19 @@
+[package]
+name = "fixed_width"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+fixed_width_derive = { path = "fixed-width-derive" }
+chrono = "0.4"
+time = { version = "0.3", features = [
+    "serde",
+    "serde-human-readable",
+    "local-offset",
+    "macros",
+    "formatting",
+    "parsing",
+] }
+bigdecimal = "0.4.1"
