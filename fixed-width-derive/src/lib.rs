@@ -6,7 +6,7 @@ use syn::{parse_macro_input, DeriveInput, Ident};
 
 // cargo expand --test test_simple
 // RUSTFLAGS="-Z macro-backtrace" cargo test
-// da eseguire con rust nightly
+// execute with rust nightly
 
 #[derive(Debug, FromDeriveInput)]
 #[darling(attributes(fixed_width), supports(struct_named))]

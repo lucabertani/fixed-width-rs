@@ -1,7 +1,8 @@
-use std::{backtrace::Backtrace, fmt::Display};
+use std::{
+    backtrace::{Backtrace, BacktraceStatus},
+    fmt::Display,
+};
 
-//#[derive(Debug, Serialize, Deserialize)]
-//#[serde(rename_all = "camelCase")]
 #[derive(Debug, Default)]
 pub struct FixedWidthError {
     msg: String,
@@ -41,11 +42,6 @@ impl FixedWidthError {
         C: Display + Send + Sync + 'static,
         E: std::error::Error + Send + Sync + 'static,
     {
-        /*FixedWidthError {
-            msg: context.to_string(),
-            backtrace: Some(backtrace),
-            source: Some(Box::new(error)),
-        }*/
         FixedWidthError::from(context, Some(Box::new(error)), Some(backtrace))
     }
 
@@ -67,6 +63,21 @@ impl FixedWidthError {
 
     pub fn source(&self) -> Option<&(dyn std::error::Error + Send + Sync)> {
         self.source.as_deref()
+    }
+}
+
+impl std::fmt::Display for FixedWidthError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Error: {}", self.msg)?;
+        if let Some(backtrace) = &self.backtrace {
+            if backtrace.status() == BacktraceStatus::Captured {
+                writeln!(f, "Backtrace: {}", backtrace)?;
+            }
+        }
+        if let Some(err) = &self.source {
+            write!(f, "Caused by:\n{}", err)?;
+        }
+        Ok(())
     }
 }
 
