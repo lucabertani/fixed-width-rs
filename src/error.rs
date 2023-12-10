@@ -82,7 +82,7 @@ impl std::fmt::Display for FixedWidthError {
 }
 
 /// Trait to declare the context() and with_context() methods.
-pub trait Context<T, E> {
+pub(crate) trait Context<T, E> {
     /// Wrap the error value with additional context.
     fn context<C>(self, context: C) -> Result<T, FixedWidthError>
     where
@@ -97,7 +97,7 @@ pub trait Context<T, E> {
 }
 
 /// Trait that allows converting a generic object C into a FixedWidthError.
-pub trait StdError {
+pub(crate) trait StdError {
     fn ext_context<C>(self, context: C) -> FixedWidthError
     where
         C: Display + Send + Sync + 'static;
