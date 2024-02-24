@@ -120,6 +120,45 @@ impl AnyValue {
         let mut value;
 
         if decimals > 0 {
+            //let decimals = decimals - 1; // need space to sign
+            let mut decimals = decimals;
+            if field_config.add_sign() {
+                decimals = decimals - 1;
+            }
+
+            let value_int = bd
+                .to_i64()
+                .context(format!("Unable to extract integer part of {}", bd))?;
+            let value_decimals = bd - value_int;
+            let value_decimals =
+                value_decimals.with_scale_round(decimals as i64, RoundingMode::HalfUp);
+
+            let value_decimals_str = value_decimals.to_string();
+            let mut value_decimals_str = value_decimals_str[2..].to_string();
+
+            for _ in 0..(decimals - value_decimals_str.len()) {
+                value_decimals_str.push('0');
+            }
+
+            value = format!("{}{}", value_int, value_decimals_str);
+        } else {
+            value = bd.to_string();
+        }
+
+        if field_config.add_sign() {
+            match bd_copy.sign() {
+                Sign::NoSign | Sign::Plus => value.push('+'),
+                Sign::Minus => value.push('-'),
+            };
+        }
+
+        Ok(value.as_bytes().to_vec())
+
+        /*let decimals = field_config.decimals();
+        let bd_copy = bd.clone();
+        let mut value;
+
+        if decimals > 0 {
             let decimals = decimals - 1; // need space to sign
 
             let value_int = bd
@@ -147,7 +186,7 @@ impl AnyValue {
             Sign::Minus => value.push('-'),
         };
 
-        Ok(value.as_bytes().to_vec())
+        Ok(value.as_bytes().to_vec())*/
     }
 
     /*pub fn to_bytes(&self) -> Vec<u8> {

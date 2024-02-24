@@ -4,6 +4,7 @@ pub struct FieldConfig {
     pad: u8,
     pad_left: bool,
     decimals: usize,
+    add_sign: bool,
     date_format: String, //TODO require field when a Date is passed
     time_format: String,
     date_time_format: String,
@@ -17,6 +18,7 @@ impl FieldConfig {
         pad: u8,
         pad_left: bool,
         decimals: usize,
+        add_sign: bool,
         date_format: &str,
         time_format: &str,
         date_time_format: &str,
@@ -27,6 +29,7 @@ impl FieldConfig {
             pad,
             pad_left,
             decimals,
+            add_sign,
             date_format: date_format.to_string(),
             time_format: time_format.to_string(),
             date_time_format: date_time_format.to_string(),
@@ -63,5 +66,9 @@ impl FieldConfig {
 
     pub fn date_time_format(&self) -> &str {
         self.date_time_format.as_ref()
+    }
+
+    pub fn add_sign(&self) -> bool {
+        self.add_sign
     }
 }
