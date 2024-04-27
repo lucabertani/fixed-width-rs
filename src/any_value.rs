@@ -43,7 +43,19 @@ impl AnyValue {
 
     pub fn to_bytes(self, field_config: FieldConfig) -> Result<Vec<u8>, FixedWidthError> {
         match self {
-            AnyValue::String(s) => Ok(s.as_bytes().to_vec()),
+            //AnyValue::String(s) => Ok(s.as_bytes().to_vec()),
+            AnyValue::String(mut s) => {
+                if s.len() > field_config.size() {
+                    // try to trim string
+                    s = s.trim().to_string();
+                    if s.len() > field_config.size() {
+                        // truncate string
+                        s = s[..field_config.size()].to_string();
+                    }
+                }
+
+                Ok(s.as_bytes().to_vec())
+            }
             AnyValue::TimeDate(d) => {
                 let format = format_description::parse(field_config.date_format())?;
                 let formatted = d.format(&format)?;
