@@ -88,12 +88,13 @@ pub(crate) trait Context<T, E> {
     where
         C: Display + Send + Sync + 'static;
 
-    /// Wrap the error value with additional context that is evaluated lazily
-    /// only once an error does occur.
-    fn with_context<C, F>(self, f: F) -> Result<T, FixedWidthError>
+    // Wrap the error value with additional context that is evaluated lazily
+    // only once an error does occur.
+
+    /*fn with_context<C, F>(self, f: F) -> Result<T, FixedWidthError>
     where
         C: Display + Send + Sync + 'static,
-        F: FnOnce() -> C;
+        F: FnOnce() -> C;*/
 }
 
 /// Trait that allows converting a generic object C into a FixedWidthError.
@@ -121,7 +122,7 @@ where
         }
     }
 
-    fn with_context<C, F>(self, context: F) -> Result<T, FixedWidthError>
+    /*fn with_context<C, F>(self, context: F) -> Result<T, FixedWidthError>
     where
         C: Display + Send + Sync + 'static,
         F: FnOnce() -> C,
@@ -130,7 +131,7 @@ where
             Ok(ok) => Ok(ok),
             Err(error) => Err(error.ext_context(context())),
         }
-    }
+    }*/
 }
 
 /// Implementation to extend the standard Option struct and allow conversion into a Result
@@ -148,7 +149,7 @@ impl<T> Context<T, std::convert::Infallible> for Option<T> {
         }
     }
 
-    fn with_context<C, F>(self, context: F) -> Result<T, FixedWidthError>
+    /*fn with_context<C, F>(self, context: F) -> Result<T, FixedWidthError>
     where
         C: Display + Send + Sync + 'static,
         F: FnOnce() -> C,
@@ -160,7 +161,7 @@ impl<T> Context<T, std::convert::Infallible> for Option<T> {
                 Backtrace::capture(),
             )),
         }
-    }
+    }*/
 }
 
 /// Implementation to extend a generic struct E, which effectively represents any error that implements the Error trait, and allows converting it into a FixedWidthError.

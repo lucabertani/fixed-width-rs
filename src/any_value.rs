@@ -138,6 +138,9 @@ impl AnyValue {
                 decimals = decimals - 1;
             }
 
+            // because sign will be added later
+            let bd = bd.abs();
+
             let value_int = bd
                 .to_i64()
                 .context(format!("Unable to extract integer part of {}", bd))?;
