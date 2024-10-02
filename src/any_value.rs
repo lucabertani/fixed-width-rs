@@ -50,7 +50,35 @@ impl AnyValue {
                     s = s.trim().to_string();
                     if s.len() > field_config.size() {
                         // truncate string
-                        s = s[..field_config.size()].to_string();
+                        //s = s[..field_config.size()].to_string();
+
+                        //let s = s.char_indices().nth(field_config.size());
+                        /*let mut last_index = field_config.size();
+                        //while last_index > 0 && !s.is_char_boundary(last_index) {
+                        while last_index > 0 {
+
+                            let a = &s[..field_config.size()];
+                            last_index -= 1;
+                        }
+                        // s = s.chars().take(field_config.size()).collect();
+                        s = s[..field_config.size()].to_string();*/
+
+                        // gestisco il caso di caratteri utf-16 che non possono essere splittati in due
+                        let mut res = String::new();
+                        let chars: Vec<char> = s.chars().collect();
+                        let mut i = 0;
+                        while let Some(c) = chars.get(i) {
+                            println!("res: {} ({}), c: {} ({})", res, res.len(), c, c.len_utf8());
+                            if res.len() + c.len_utf8() < field_config.size() {
+                                res.push(*c);
+                            } else {
+                                break;
+                            }
+
+                            i += 1;
+                        }
+
+                        s = res;
                     }
                 }
 
@@ -542,3 +570,39 @@ where
     }
 }
 */
+
+// Rua das Mercês nº45  Fracçao C
+
+#[cfg(test)]
+mod tests {
+
+    use crate::{any_value::AnyValue, model::field_config::FieldConfig};
+
+    #[test]
+    fn test_string_truncate() {
+        let s_orig = "Rua das Mercês nº45  Fracção C";
+
+        let s = AnyValue::String(s_orig.to_string());
+        let b = s
+            .to_bytes(FieldConfig::new(
+                "a",
+                30,
+                b' ',
+                false,
+                0,
+                false,
+                "[year][month][day]",
+                "[hour padding:none][minute][second]",
+                "[year][month][day] [hour padding:none][minute][second]",
+            ))
+            .unwrap();
+
+        let s_trunc = String::from_utf8_lossy(&b);
+
+        println!("Original string: {s_orig}");
+        println!("Truncated string: {s_trunc}");
+
+        println!("Size: {}", s_orig.len());
+        println!("Size: {}", s_trunc.len());
+    }
+}
