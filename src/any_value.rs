@@ -69,7 +69,7 @@ impl AnyValue {
                         let mut i = 0;
                         while let Some(c) = chars.get(i) {
                             // println!("res: {} ({}), c: {} ({})", res, res.len(), c, c.len_utf8());
-                            if res.len() + c.len_utf8() < field_config.size() {
+                            if res.len() + c.len_utf8() <= field_config.size() {
                                 res.push(*c);
                             } else {
                                 break;
