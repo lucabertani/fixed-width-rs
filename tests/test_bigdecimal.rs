@@ -19,7 +19,7 @@ fn test_various() {
 fn bigdecimal_test() {
     #[derive(Debug, FixedWidth)]
     struct Test {
-        #[fixed_width(size = 10, decimals = 3, pad_left = true)]
+        #[fixed_width(size = 10, decimals = 3, pad_left = true, add_sign = true)]
         number: BigDecimal,
     }
 
