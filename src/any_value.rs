@@ -173,11 +173,25 @@ impl AnyValue {
                 .to_i64()
                 .context(format!("Unable to extract integer part of {}", bd))?;
             let value_decimals = bd - value_int;
+
+            // now, if decimals is .0, this round produce X without decimals!
             let value_decimals =
                 value_decimals.with_scale_round(decimals as i64, RoundingMode::HalfUp);
 
+            // if value is 0.0, value_decimals_str will be 0
             let value_decimals_str = value_decimals.to_string();
-            let mut value_decimals_str = value_decimals_str[2..].to_string();
+            println!("value_decimals_str: {value_decimals_str}");
+
+            // only if we have a decimal, we have now 2 decimals!
+            // e.g.
+            // 0.0  => 0
+            // 0.1  => 0.10
+            // 0.01 => 0.01
+            let mut value_decimals_str = if value_decimals_str.len() > 2 {
+                value_decimals_str[2..].to_string()
+            } else {
+                "".to_string()
+            };
 
             for _ in 0..(decimals - value_decimals_str.len()) {
                 value_decimals_str.push('0');
