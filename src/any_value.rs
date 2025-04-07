@@ -180,7 +180,6 @@ impl AnyValue {
 
             // if value is 0.0, value_decimals_str will be 0
             let value_decimals_str = value_decimals.to_string();
-            println!("value_decimals_str: {value_decimals_str}");
 
             // only if we have a decimal, we have now 2 decimals!
             // e.g.
