@@ -7,8 +7,8 @@ edition = "2021"
 
 [dependencies]
 fixed_width_derive = { path = "fixed-width-derive" }
-chrono = "0.4"
-time = { version = "0.3", features = [
+chrono = "0.4.40"
+time = { version = "0.3.41", features = [
     "serde",
     "serde-human-readable",
     "local-offset",
@@ -16,4 +16,4 @@ time = { version = "0.3", features = [
     "formatting",
     "parsing",
 ] }
-bigdecimal = "0.4"
+bigdecimal = "0.4.8"
