@@ -47,6 +47,16 @@ fn enum_test_impl() {
                 Persona::F => String::from("Femmina"),
             }
         }
+
+        fn from_key(key: &str) -> Result<Self, fixed_width::error::FixedWidthError> {
+            match key {
+                "Maschio" => Ok(Persona::M),
+                "Femmina" => Ok(Persona::F),
+                _ => Err(fixed_width::error::FixedWidthError::new(
+                    format!("Unknown key: {}", key),
+                )),
+            }
+        }
     }
 
     let t = Test {

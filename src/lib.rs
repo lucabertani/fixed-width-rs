@@ -17,10 +17,25 @@ pub trait FixedWidth: Send + Sync {
         self.to_fixed_width_bytes()
             .map(|bytes| String::from_utf8(bytes).unwrap())
     }
+    fn fixed_width_size() -> usize
+    where
+        Self: Sized;
+    fn from_fixed_width_bytes(bytes: &[u8]) -> Result<Self, FixedWidthError>
+    where
+        Self: Sized;
+    fn from_fixed_width_string(s: &str) -> Result<Self, FixedWidthError>
+    where
+        Self: Sized,
+    {
+        Self::from_fixed_width_bytes(s.as_bytes())
+    }
 }
 
 pub trait FixedWidthEnum: Send + Sync {
     fn key(&self) -> String;
+    fn from_key(key: &str) -> Result<Self, FixedWidthError>
+    where
+        Self: Sized;
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -68,4 +83,18 @@ pub fn pad(
     }
 
     Ok(bytes)
+}
+
+pub fn unpad(bytes: &[u8], pad: u8, pad_left: bool) -> &[u8] {
+    if pad_left {
+        let start = bytes.iter().position(|&b| b != pad).unwrap_or(bytes.len());
+        &bytes[start..]
+    } else {
+        let end = bytes
+            .iter()
+            .rposition(|&b| b != pad)
+            .map(|i| i + 1)
+            .unwrap_or(0);
+        &bytes[..end]
+    }
 }
