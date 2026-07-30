@@ -682,13 +682,32 @@ pub fn derive(input: TokenStream) -> TokenStream {
         let parse_code = if let Some(const_val) = constant {
             let const_str = const_val.to_string();
             constant_sizes.push(size);
-            quote! {
-                let #field_name_ts = if offset + #size <= bytes.len() {
-                    offset += #size;
-                    #const_str.to_string()
-                } else {
-                    #const_str.to_string()
-                };
+
+            // Check if field type is Option<String>
+            let type_name = get_last_type_segment(&field.ty);
+            let is_option_string = type_name == "Option"
+                && get_inner_type(&field.ty)
+                    .map(|inner| get_last_type_segment(inner) == "String")
+                    .unwrap_or(false);
+
+            if is_option_string {
+                quote! {
+                    let #field_name_ts = if offset + #size <= bytes.len() {
+                        offset += #size;
+                        Some(#const_str.to_string())
+                    } else {
+                        Some(#const_str.to_string())
+                    };
+                }
+            } else {
+                quote! {
+                    let #field_name_ts = if offset + #size <= bytes.len() {
+                        offset += #size;
+                        #const_str.to_string()
+                    } else {
+                        #const_str.to_string()
+                    };
+                }
             }
         } else {
             generate_field_parse(&field)
