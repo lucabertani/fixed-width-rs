@@ -1,4 +1,4 @@
-use any_value::AnyValueTrait;
+use any_value::{AnyValue, AnyValueTrait};
 use error::FixedWidthError;
 use model::field_config::FieldConfig;
 
@@ -44,6 +44,7 @@ pub fn pad(
     field_name: &str,
     size: usize,
     pad: u8,
+    pad_if_none: u8,
     pad_left: bool,
     decimals: usize,
     add_sign: bool,
@@ -52,6 +53,11 @@ pub fn pad(
     date_time_format: &str,
 ) -> Result<Vec<u8>, FixedWidthError> {
     let any_value = any_value.to_any_value()?;
+    let effective_pad = if matches!(&any_value, AnyValue::Null(_)) {
+        pad_if_none
+    } else {
+        pad
+    };
     let field_config = FieldConfig::new(
         field_name,
         size,
@@ -77,8 +83,8 @@ pub fn pad(
 
     for _ in 0..(size - bytes.len()) {
         match pad_left {
-            true => bytes.insert(0, pad),
-            false => bytes.push(pad),
+            true => bytes.insert(0, effective_pad),
+            false => bytes.push(effective_pad),
         }
     }
 

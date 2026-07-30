@@ -69,3 +69,57 @@ fn option_enum_test() {
 
     assert_eq!("  M  F".to_string(), s);
 }
+
+#[test]
+fn option_test_pad_if_none_serialize() {
+    #[derive(Debug, FixedWidth)]
+    struct Test {
+        #[fixed_width(size = 10, pad_if_none = "*")]
+        name: Option<String>,
+        #[fixed_width(size = 5, pad = "0", pad_if_none = "9")]
+        age: Option<u32>,
+    }
+
+    let t = Test {
+        name: None,
+        age: None,
+    };
+
+    let s: String = t.to_fixed_width_string().unwrap();
+    assert_eq!("**********99999".to_string(), s);
+}
+
+#[test]
+fn option_test_pad_if_none_deserialize() {
+    #[derive(Debug, FixedWidth)]
+    struct Test {
+        #[fixed_width(size = 10, pad_if_none = "*")]
+        name: Option<String>,
+    }
+
+    let t = Test::from_fixed_width_string("**********").unwrap();
+    assert_eq!(true, t.name.is_none());
+}
+
+#[test]
+fn option_test_pad_if_none_roundtrip() {
+    #[derive(Debug, FixedWidth)]
+    struct Test {
+        #[fixed_width(size = 8, pad_if_none = "#")]
+        code: Option<String>,
+        #[fixed_width(size = 5, pad = "0", pad_if_none = "9")]
+        qty: Option<u32>,
+    }
+
+    let input = Test {
+        code: None,
+        qty: Some(42),
+    };
+
+    let s = input.to_fixed_width_string().unwrap();
+    assert_eq!("########00042".to_string(), s);
+
+    let parsed = Test::from_fixed_width_string(s.as_str()).unwrap();
+    assert_eq!(true, parsed.code.is_none());
+    assert_eq!(Some(42), parsed.qty);
+}

@@ -26,6 +26,8 @@ struct FixedWidthField {
     size: usize,
     #[darling(default = "pad_default")]
     pad: char,
+    #[darling(default)]
+    pad_if_none: Option<char>,
     #[darling(default = "pad_left_default")]
     pad_left: bool,
     #[darling(default = "decimals_default")]
@@ -38,6 +40,12 @@ struct FixedWidthField {
     time_format: String,
     #[darling(default = "date_time_format_default")]
     date_time_format: String,
+    /// When set, this field always writes the constant value and, on read,
+    /// skips the bytes from input (tolerating their absence) and assigns
+    /// the constant value to the field. Useful for line-terminator fields
+    /// like "\r\n" that get stripped by line readers.
+    #[darling(default)]
+    constant: Option<String>,
 }
 
 fn pad_default() -> char {
@@ -97,6 +105,10 @@ impl FixedWidthField {
         self.pad
     }
 
+    fn pad_if_none(&self) -> char {
+        self.pad_if_none.unwrap_or(self.pad)
+    }
+
     fn pad_left(&self) -> bool {
         self.pad_left
     }
@@ -119,6 +131,10 @@ impl FixedWidthField {
 
     fn date_time_format(&self) -> &str {
         self.date_time_format.as_ref()
+    }
+
+    fn constant(&self) -> Option<&str> {
+        self.constant.as_deref()
     }
 }
 
@@ -482,6 +498,7 @@ fn generate_field_parse(field: &FixedWidthField) -> proc_macro2::TokenStream {
     let field_name_ts: proc_macro2::TokenStream = field_name.parse().unwrap();
     let size = field.size();
     let pad = field.pad() as u8;
+    let pad_if_none = field.pad_if_none() as u8;
     let pad_left = field.pad_left();
     let decimals = field.decimals();
     let add_sign = field.add_sign();
@@ -554,7 +571,7 @@ fn generate_field_parse(field: &FixedWidthField) -> proc_macro2::TokenStream {
             );
             quote! {
                 let field_bytes = &bytes[offset..offset + #size];
-                let #field_name_ts = if field_bytes.iter().all(|&b| b == #pad) {
+                let #field_name_ts = if field_bytes.iter().all(|&b| b == #pad || b == #pad_if_none) {
                     None
                 } else {
                     let unpadded = fixed_width::unpad(field_bytes, #pad, #pad_left);
@@ -605,6 +622,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
     let mut parse_fields = Vec::new();
     let mut field_names = Vec::new();
     let mut size_tokens = Vec::new();
+    let mut constant_sizes: Vec<usize> = Vec::new();
 
     for field in fw.data.take_struct().unwrap() {
         let field_name = field.field_name();
@@ -612,26 +630,79 @@ pub fn derive(input: TokenStream) -> TokenStream {
         let field_name_ts: proc_macro2::TokenStream = field_name.parse().unwrap();
         let size = field.size();
         let pad = field.pad() as u8;
+        let pad_if_none = field.pad_if_none() as u8;
         let pad_left = field.pad_left();
         let decimals = field.decimals();
         let add_sign = field.add_sign();
         let date_format = field.date_format();
         let time_format = field.time_format();
         let date_time_format = field.date_time_format();
+        let constant = field.constant();
 
-        let convert = quote! {
-            let mut v = fixed_width::pad(&self.#field_name_ts, #field_name, #size, #pad, #pad_left, #decimals, #add_sign, #date_format, #time_format, #date_time_format)?;
-            res.append(&mut v);
+        if let Some(const_val) = constant {
+            // Validate constant length at compile time
+            if const_val.len() > size {
+                panic!(
+                    "constant value '{}' for field '{}' is {} bytes but field size is {}",
+                    const_val,
+                    field_name,
+                    const_val.len(),
+                    size
+                );
+            }
+        }
+
+        let convert = if let Some(const_val) = constant {
+            let const_len = const_val.len();
+            quote! {
+                {
+                    let mut v: Vec<u8> = Vec::new();
+                    v.extend_from_slice(#const_val.as_bytes());
+                    // pad to size
+                    let padding_needed = #size - #const_len;
+                    for _ in 0..padding_needed {
+                        if #pad_left {
+                            v.insert(0, #pad);
+                        } else {
+                            v.push(#pad);
+                        }
+                    }
+                    res.append(&mut v);
+                }
+            }
+        } else {
+            quote! {
+                let mut v = fixed_width::pad(&self.#field_name_ts, #field_name, #size, #pad, #pad_if_none, #pad_left, #decimals, #add_sign, #date_format, #time_format, #date_time_format)?;
+                res.append(&mut v);
+            }
         };
         fields.push(convert);
 
         // Parse code
-        let parse_code = generate_field_parse(&field);
+        let parse_code = if let Some(const_val) = constant {
+            let const_str = const_val.to_string();
+            constant_sizes.push(size);
+            quote! {
+                let #field_name_ts = if offset + #size <= bytes.len() {
+                    offset += #size;
+                    #const_str.to_string()
+                } else {
+                    #const_str.to_string()
+                };
+            }
+        } else {
+            generate_field_parse(&field)
+        };
         parse_fields.push(parse_code);
 
         field_names.push(field_name_ts);
         size_tokens.push(quote! { #size });
     }
+
+    // Sum of sizes of constant fields — these may be missing from input
+    let constant_total: usize = constant_sizes.iter().sum();
+    let constant_total_token: proc_macro2::TokenStream =
+        syn::parse_str(&constant_total.to_string()).unwrap();
 
     let output: proc_macro2::TokenStream = quote! {
         impl FixedWidth for #ident {
@@ -648,9 +719,10 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
             fn from_fixed_width_bytes(bytes: &[u8]) -> Result<Self, fixed_width::error::FixedWidthError> {
                 let expected_size = 0 #(+ #size_tokens)*;
-                if bytes.len() < expected_size {
+                let min_expected_size = expected_size - #constant_total_token;
+                if bytes.len() < min_expected_size {
                     return Err(fixed_width::error::FixedWidthError::new(
-                        format!("Expected at least {} bytes, got {}", expected_size, bytes.len())
+                        format!("Expected at least {} bytes, got {}", min_expected_size, bytes.len())
                     ));
                 }
                 let mut offset: usize = 0;
